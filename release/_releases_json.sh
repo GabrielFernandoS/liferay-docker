@@ -332,7 +332,7 @@ function _tag_jakarta_product_versions {
 					| to_entries
 					| sort_by(.key)
 					| from_entries
-				)' "${product_version_json_file}" > "${product_version_json_file}.tmp" && mv "${product_version_json_file}.tmp" "${product_version_json_file}"
+			)' "${product_version_json_file}" > "${product_version_json_file}.tmp" && mv "${product_version_json_file}.tmp" "${product_version_json_file}"
 	done
 }
 
