@@ -20,6 +20,7 @@ function main {
 		test_releases_json_not_process_new_product
 		test_releases_json_process_new_product
 		test_releases_json_promote_product_versions
+		test_releases_json_tag_jakarta_product_versions
 		test_releases_json_tag_recommended_product_versions
 	fi
 
@@ -89,6 +90,12 @@ function test_releases_json_get_liferay_upgrade_folder_version {
 	_test_releases_json_get_liferay_upgrade_folder_version "7.2.10.8" "v7_2_x"
 	_test_releases_json_get_liferay_upgrade_folder_version "7.3.10-u36" "v7_3_x"
 	_test_releases_json_get_liferay_upgrade_folder_version "7.4.3.132-ga132" "v7_4_x"
+}
+
+function test_releases_json_tag_jakarta_product_versions {
+	_test_releases_json_tag_jakarta_product_versions "2025.q2" "false"
+	_test_releases_json_tag_jakarta_product_versions "2025.q3" "true"
+	_test_releases_json_tag_jakarta_product_versions "2026.q1" "true"
 }
 
 function test_releases_json_merge_json_snippets {
@@ -185,6 +192,22 @@ function _test_releases_json_get_liferay_upgrade_folder_version {
 	assert_equals \
 		"$(_get_liferay_upgrade_folder_version "${1}")" \
 		"${2}"
+}
+
+function _test_releases_json_tag_jakarta_product_versions {
+	local product_group_version="${1}"
+
+	local product_group_version_json="${product_group_version//./-}.json"
+
+	echo "[{\"productGroupVersion\": \"${product_group_version}\"}]" > "${product_group_version_json}"
+
+	_tag_jakarta_product_versions
+
+	assert_equals \
+		"$(jq -r ".[0].tags | contains([\"jakarta\"])" "${product_group_version_json}")" \
+		"${2}"
+
+	rm --force "${product_group_version_json}"
 }
 
 main "${@}"
