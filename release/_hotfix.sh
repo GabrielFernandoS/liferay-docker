@@ -138,7 +138,7 @@ function compare_jars {
 			grep --invert-match "__liferay__/index.js" | \
 			grep --invert-match "_jsp.class" | \
 			grep --invert-match "_jsp.java" | \
-			grep --invert-match "_jsp\$[0-9]\+\.class" | \
+			grep --invert-match "_jsp\$[^/]\+\.class" | \
 			grep --invert-match "index.js.map" | \
 			grep --invert-match "pom.properties" | \
 			grep --invert-match "previous-compilation-data.bin" | \
@@ -159,7 +159,10 @@ function compare_jars {
 			# TODO Modify "ant all" to not update this file every time
 			#
 			grep --invert-match "META-INF/system.packages.extra.mf" | \
-			sed --expression "s/[0-9][0-9][-]*[0-9][0-9][-]*[0-9][0-9][-]*[0-9][0-9]\ [0-9][0-9]:[0-9][0-9]//"
+			#
+			# Print only the relevant fields: uncompressed size, compression method, checksum, and name
+			#
+			awk '{print $1, $2, $7, $8}'
 	}
 
 	local jar_descriptions=$( (
@@ -174,7 +177,7 @@ function compare_jars {
 		exit 2
 	fi
 
-	jar_descriptions=$(echo "${jar_descriptions}" | awk '($1 == 1) && ($3 == "Defl:N") { print $7 }' | uniq)
+	jar_descriptions=$(echo "${jar_descriptions}" | awk '($1 == 1) && ($3 == "Defl:N") { print $5 }' | uniq)
 
 	if [ -n "${jar_descriptions}" ]
 	then

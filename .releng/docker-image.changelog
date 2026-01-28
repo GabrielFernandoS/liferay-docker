@@ -1964,3 +1964,87 @@ docker.image.git.id-9.0.93=88964ab3bce0cf131162e3bd5e677aed6c54be82
 
 docker.image.change.log-9.0.94=LPD-68658 LPD-73814
 docker.image.git.id-9.0.94=8eafed25a1b78c608ea53f0489b51b6e23437df4
+
+#
+# Liferay Docker Image Version 9.0.95
+#
+
+docker.image.change.log-9.0.95=LPD-73204
+docker.image.git.id-9.0.95=70994279332d563b24dbad61c6c52e4b83d468fa
+
+#
+# Liferay Docker Image Version 9.0.96
+#
+
+docker.image.change.log-9.0.96=LPD-75058
+docker.image.git.id-9.0.96=a9567e74564f0fc49c9d248da44ca2cc65113fb5
+
+#
+# Liferay Docker Image Version 9.0.97
+#
+
+docker.image.change.log-9.0.97=LPD-74624
+docker.image.git.id-9.0.97=b85612f1009cc913877ec065b2a49eba25e2ad87
+
+#
+# Liferay Docker Image Version 9.0.98
+#
+
+docker.image.change.log-9.0.98=LPD-73929
+docker.image.git.id-9.0.98=3d32ff69603dce5cdee5b0872ef92f002e4df0ea
+
+#
+# Liferay Docker Image Version 9.0.99
+#
+
+docker.image.change.log-9.0.99=LPD-75312 LPD-75507 LPD-66034
+docker.image.git.id-9.0.99=afbd661f453521d88884d8aff51c3902600d21f1
+
+#
+# Liferay Docker Image Version 9.0.100
+#
+
+docker.image.change.log-9.0.100=LPD-75507
+docker.image.git.id-9.0.100=2da73d94f60de432165f4653ff2e551b5c4b35a2
+
+#
+# Liferay Docker Image Version 9.0.101
+#
+
+docker.image.change.log-9.0.101=LPD-75923 LPD-75365
+docker.image.git.id-9.0.101=fb2846cbde8f7c8028700043a5081aa5d22e1186
+
+#
+# Liferay Docker Image Version 9.0.102
+#
+
+docker.image.change.log-9.0.102=LPD-75598 DOCKER-298
+docker.image.git.id-9.0.102=c99a04e84c15af619c0de9b384a1f27b945dbca7
+
+#
+# Liferay Docker Image Version 9.0.103
+#
+
+docker.image.change.log-9.0.103=LPD-76074
+docker.image.git.id-9.0.103=52e52dc2996e0bfeebd4091549ac12c37edfd436
+
+#
+# Liferay Docker Image Version 9.0.104
+#
+
+docker.image.change.log-9.0.104=LPD-73508
+docker.image.git.id-9.0.104=741ca46e52941ce7211083e5013bf159639b951b
+
+#
+# Liferay Docker Image Version 9.0.105
+#
+
+docker.image.change.log-9.0.105=LPD-75793
+docker.image.git.id-9.0.105=6c730a398908c7ac6ce0b6a4fc170baed8350c0c
+
+#
+# Liferay Docker Image Version 9.0.106
+#
+
+docker.image.change.log-9.0.106=LPD-72888
+docker.image.git.id-9.0.106=ebcd1092bd7eed1cb4c0631d2a4edbdb33b1dfd8

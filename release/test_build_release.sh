@@ -18,6 +18,7 @@ function main {
 	test_build_release_bundle_smaller_than_1_gb_300_mb
 	test_build_release_handle_automated_build
 	test_build_release_has_packaged_bundles
+	test_build_release_not_handle_automated_build
 
 	tear_down
 }
@@ -34,6 +35,8 @@ function set_up {
 }
 
 function tear_down {
+	common_tear_down
+
 	rm --force --recursive "${_RELEASE_ROOT_DIR}/release-data"
 
 	unset LIFERAY_RELEASE_GIT_REF
@@ -50,6 +53,8 @@ function test_build_release_bundle_smaller_than_1_gb_300_mb {
 }
 
 function test_build_release_handle_automated_build {
+	BUILD_CAUSE="TIMERTRIGGER"
+
 	handle_automated_build &> /dev/null
 
 	assert_equals \
@@ -59,6 +64,8 @@ function test_build_release_handle_automated_build {
 		"true" \
 		"${TRIGGER_CI_TEST_SUITE}" \
 		"true"
+
+	unset BUILD_CAUSE
 }
 
 function test_build_release_has_packaged_bundles {
@@ -69,6 +76,35 @@ function test_build_release_has_packaged_bundles {
 		"1" \
 		"$(find "${_RELEASE_PACKAGE}" -name "liferay-dxp-tomcat-2025.q4.0-*.zip" -type f | wc --lines)" \
 		"1"
+}
+
+function test_build_release_not_handle_automated_build {
+	_test_build_release_not_handle_automated_build "hotfix" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
+	_test_build_release_not_handle_automated_build "nightly" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
+
+	BUILD_CAUSE="TIMERTRIGGER"
+
+	local latest_release_candidate=$(
+		cat <<- END
+		<li>
+			<a href="/dxp/release-candidates/2025.q2.9-1754280641" class="icon icon-directory" title="2025.q2.9-1754280641">
+				<span class="name">2025.q2.9-1754280641</span>
+				<span class="size"></span>
+				<span class="date">12/23/2025 12:32:16 PM</span>
+			</a>
+		</li>
+		END
+	)
+
+	latest_release_candidate="${latest_release_candidate//$'\n'/\\n}"
+
+	sed --in-place "/<\/ul>/i \\${latest_release_candidate}" test-dependencies/actual/release-candidates.html
+
+	_test_build_release_not_handle_automated_build "release-candidate" "${LIFERAY_COMMON_EXIT_CODE_BAD}"
+
+	git restore test-dependencies/actual/release-candidates.html
+
+	unset BUILD_CAUSE
 }
 
 function test_build_release_main {
@@ -82,6 +118,14 @@ function test_build_release_main {
 	then
 		return "${LIFERAY_COMMON_EXIT_CODE_BAD}"
 	fi
+}
+
+function _test_build_release_not_handle_automated_build {
+	LIFERAY_RELEASE_OUTPUT="${1}"
+
+	handle_automated_build &> /dev/null
+
+	assert_equals "${?}" "${2}"
 }
 
 main

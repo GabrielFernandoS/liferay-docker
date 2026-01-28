@@ -19,7 +19,10 @@ function generate_releases_json {
 	_add_database_schema_versions
 	_add_major_versions
 	_promote_product_versions
+	_tag_jakarta_product_versions
 	_tag_recommended_product_versions
+
+	_sort_all_releases_json_attributes
 
 	_merge_json_snippets
 
@@ -27,16 +30,16 @@ function generate_releases_json {
 }
 
 function _add_database_schema_versions {
-    local product_version_json_file
+	local product_version_json_file
 
-    for product_version_json_file in $(find "${_PROMOTION_DIR}" -maxdepth 1 -type f | grep --extended-regexp "[0-9]{4}-[0-9]{2}-[0-9]{2}-(dxp|portal).*\.json")
-    do
+	for product_version_json_file in $(find "${_PROMOTION_DIR}" -maxdepth 1 -type f | grep --extended-regexp "[0-9]{4}-[0-9]{2}-[0-9]{2}-(dxp|portal).*\.json")
+	do
 		local product_version=$(jq --raw-output ".[].url" "${product_version_json_file}" | xargs basename)
 
-        if [ "$(get_product_group_version "${product_version}")" == "7.0" ]
-        then
-            continue
-        fi
+		if [ "$(get_product_group_version "${product_version}")" == "7.0" ]
+		then
+			continue
+		fi
 
 		local repository="liferay-portal-ee"
 
@@ -54,13 +57,13 @@ function _add_database_schema_versions {
 			continue
 		fi
 
-        jq "map(
-                . + {databaseSchemaVersion: \"${database_schema_version}\"}
-                | to_entries
-                | sort_by(.key)
-                | from_entries
-        )" "${product_version_json_file}" > "${product_version_json_file}.tmp" && mv "${product_version_json_file}.tmp" "${product_version_json_file}"
-    done
+		jq "map(
+				. + {databaseSchemaVersion: \"${database_schema_version}\"}
+				| to_entries
+				| sort_by(.key)
+				| from_entries
+		)" "${product_version_json_file}" > "${product_version_json_file}.tmp" && mv "${product_version_json_file}.tmp" "${product_version_json_file}"
+	done
 }
 
 function _add_major_versions {
@@ -110,7 +113,7 @@ function _get_database_schema_version {
 		fi
 	fi
 
-	local database_schema_version=$(\
+	local database_schema_version=$( \
 		grep \
 			--only-matching \
 			--perl-regexp "(?<=new Version\()[^)]+(?=\))" \
@@ -142,6 +145,36 @@ function _get_liferay_upgrade_folder_version {
 	else
 		echo "v$(get_product_group_version "${product_version}" | tr '.' '_')_x"
 	fi
+}
+
+function _get_supported_product_group_versions {
+	local supported_product_group_versions=$( \
+		ls "${_PROMOTION_DIR}" | \
+		grep \
+			--extended-regexp \
+			--only-matching \
+			"(7+\.[2-4]+(\.q[1-4])?|20[0-9][0-9]\.q[1-4])" | \
+		sort --unique)
+
+	local latest_product_version=$( \
+		echo "${supported_product_group_versions}" | \
+		grep ".q" | \
+		tail --lines=1)
+
+	local quarter=$(get_release_quarter "${latest_product_version}")
+	local year=$(get_release_year "${latest_product_version}")
+
+	if [ "${quarter}" -lt 4 ]
+	then
+		quarter=$((quarter + 1))
+	else
+		quarter=1
+		year=$((year + 1))
+	fi
+
+	supported_product_group_versions+=$'\n'"${year}.q${quarter}"
+
+	echo "${supported_product_group_versions}" | sort
 }
 
 function _merge_json_snippets {
@@ -313,7 +346,38 @@ function _promote_product_versions {
 			else
 				lc_log INFO "No product version found to promote for ${product_name}-${group_version}."
 			fi
-		done < "${_RELEASE_ROOT_DIR}/supported-${product_name}-versions.txt"
+		done < <(_get_supported_product_group_versions)
+	done
+}
+
+function _sort_all_releases_json_attributes {
+	lc_log INFO "Sorting all releases.json attributes."
+
+	local release_json_file
+
+	find "${_PROMOTION_DIR}" -maxdepth 1 -name "*.json" -type f | while read -r release_json_file
+	do
+		jq "map(
+				to_entries
+				| sort_by(.key)
+				| from_entries
+			)" "${release_json_file}" > "${release_json_file}.tmp" && mv "${release_json_file}.tmp" "${release_json_file}"
+	done
+}
+
+function _tag_jakarta_product_versions {
+	lc_log INFO "Tagging product versions with Jakarta support."
+
+	local product_version_json_file
+
+	find "${_PROMOTION_DIR}" -maxdepth 1 -name "*.json" -type f | while read -r product_version_json_file
+	do
+		jq "map(
+				if (.productGroupVersion? | (contains(\"q\") and . >= \"2025.q3\"))
+				then
+					.tags = ((.tags // []) + [\"jakarta\"] | unique | sort)
+				end
+			)" "${product_version_json_file}" > "${product_version_json_file}.tmp" && mv "${product_version_json_file}.tmp" "${product_version_json_file}"
 	done
 }
 
@@ -331,10 +395,7 @@ function _tag_recommended_product_versions {
 			lc_log INFO "Tagging ${latest_product_version_json_file} as recommended."
 
 			jq "map(
-					(. + {tags: [\"recommended\"]})
-					| to_entries
-					| sort_by(.key)
-					| from_entries
+					.tags = ((.tags // []) + [\"recommended\"] | unique | sort)
 				)" "${latest_product_version_json_file}" > "${latest_product_version_json_file}.tmp" && mv "${latest_product_version_json_file}.tmp" "${latest_product_version_json_file}"
 		else
 			lc_log INFO "Unable to get latest product version JSON file for ${product_version}."

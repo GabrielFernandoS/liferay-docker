@@ -21,11 +21,11 @@ function add_property {
 function check_supported_versions {
 	local supported_version="$(get_product_group_version)"
 
-	if [ -z $(grep "${supported_version}" "${_RELEASE_ROOT_DIR}"/supported-"${LIFERAY_RELEASE_PRODUCT_NAME}"-versions.txt) ]
+	if [[ ! "${supported_version}" =~ ^(7\.[2-4]|20[0-9][0-9]\.q[1-4])$ ]]
 	then
-		lc_log ERROR "Unable to find ${supported_version} in supported-${LIFERAY_RELEASE_PRODUCT_NAME}-versions.txt."
+		lc_log ERROR "${supported_version} is not a supported group version."
 
-		exit "${LIFERAY_COMMON_EXIT_CODE_BAD}"
+		return "${LIFERAY_COMMON_EXIT_CODE_BAD}"
 	fi
 }
 
@@ -81,7 +81,7 @@ function main {
 
 	check_usage
 
-	check_supported_versions
+	lc_time_run check_supported_versions
 
 	init_gcs
 
@@ -119,8 +119,7 @@ function main {
 
 function prepare_next_release_branch {
 	if ! is_quarterly_release ||
-	   [ ! $(echo "${LIFERAY_RELEASE_PREPARE_NEXT_RELEASE_BRANCH}" | grep --ignore-case "true") ] ||
-	   [[ "$(get_release_patch_version)" -eq 0 ]]
+	   ! $(echo "${LIFERAY_RELEASE_PREPARE_NEXT_RELEASE_BRANCH}" | grep --ignore-case "true")
 	then
 		lc_log INFO "Skipping the preparation of the next release branch."
 
@@ -129,10 +128,11 @@ function prepare_next_release_branch {
 
 	local product_group_version="$(get_product_group_version)"
 
-	local latest_quarterly_product_version="$(\
-		jq --raw-output ".[] | \
+	local latest_quarterly_product_version=$( \
+		jq --raw-output "[.[] | \
 			select(.productGroupVersion == \"${product_group_version}\" and .promoted == \"true\") | \
-			.targetPlatformVersion" ${_PROMOTION_DIR}/*releases.json)"
+			.targetPlatformVersion] | last" ${_PROMOTION_DIR}/*releases.json | \
+			tr -d '[:space:]')
 
 	if [ "$(get_product_version_without_lts_suffix)" != "${latest_quarterly_product_version}" ]
 	then
@@ -244,7 +244,7 @@ function reference_new_releases {
 
 	if [ -z "${LIFERAY_RELEASE_TEST_MODE}" ]
 	then
-		issue_key="$(\
+		issue_key="$( \
 			add_jira_issue \
 				"60a3f462391e56006e6b661b" \
 				"Release Tester" \
@@ -277,7 +277,7 @@ function reference_new_releases {
 
 	local product_group_version="$(get_product_group_version)"
 
-	local previous_product_version="$(\
+	local previous_product_version="$( \
 		grep "portal.latest.bundle.version\[${product_group_version}" \
 			"build-shared.properties" | \
 			tail -1 | \
@@ -322,7 +322,7 @@ function reference_new_releases {
 		"${_PRODUCT_VERSION}" \
 		"portal.latest.bundle.version\[${previous_product_version}\]="
 
-	local latest_product_group_version="$(\
+	local latest_product_group_version="$( \
 		grep "portal.latest.bundle.version\[master\]=" \
 			"build-shared.properties" | \
 			cut --delimiter='=' --fields=2 | \
@@ -336,7 +336,7 @@ function reference_new_releases {
 			"portal.latest.bundle.version\[master\]=${previous_product_version}"
 	fi
 
-	local previous_quarterly_release_branch="$(\
+	local previous_quarterly_release_branch="$( \
 		grep "portal.latest.bundle.version" \
 			"build-shared.properties" | \
 			tail -1 | \

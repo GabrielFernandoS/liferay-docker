@@ -16,6 +16,7 @@ function main {
 
 		if [ -d "${_PROJECTS_DIR}/liferay-portal-ee" ]
 		then
+			test_release_gold_check_supported_versions
 			test_release_gold_check_usage
 			test_release_gold_not_prepare_next_release_branch
 			test_release_gold_set_next_release_date
@@ -60,26 +61,40 @@ function tear_down {
 	unset _PROJECTS_DIR
 }
 
+function test_release_gold_check_supported_versions {
+	_test_release_gold_check_supported_versions "2024.q1.12" "${LIFERAY_COMMON_EXIT_CODE_OK}"
+	_test_release_gold_check_supported_versions "2025.q5.0" "${LIFERAY_COMMON_EXIT_CODE_BAD}"
+	_test_release_gold_check_supported_versions "7.0.6-ga7" "${LIFERAY_COMMON_EXIT_CODE_BAD}"
+	_test_release_gold_check_supported_versions "7.3.10-u36" "${LIFERAY_COMMON_EXIT_CODE_OK}"
+	_test_release_gold_check_supported_versions "7.4.3.125-ga125" "${LIFERAY_COMMON_EXIT_CODE_OK}"
+}
+
 function test_release_gold_check_usage {
 	assert_equals "$(check_usage)" "$(cat test-dependencies/expected/test_release_gold_check_usage_output.txt)"
 }
 
 function test_release_gold_not_prepare_next_release_branch {
-	if [ ! $(echo "${LIFERAY_RELEASE_PREPARE_NEXT_RELEASE_BRANCH}" | grep --ignore-case "true") ]
-	then
-		_test_release_gold_not_prepare_next_release_branch "2024.q1.12" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
-	fi
+	_test_release_gold_prepare_next_release_branch "2024.q1.12" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
+	_test_release_gold_prepare_next_release_branch "7.3.10-u36" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
+	_test_release_gold_prepare_next_release_branch "7.4.13-u101" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
+	_test_release_gold_prepare_next_release_branch "7.4.3.125-ga125" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
 
-	_test_release_gold_not_prepare_next_release_branch "2024.q2.0" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
-	_test_release_gold_not_prepare_next_release_branch "7.3.10-u36" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
-	_test_release_gold_not_prepare_next_release_branch "7.4.13-u101" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
-	_test_release_gold_not_prepare_next_release_branch "7.4.3.125-ga125" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
+	LIFERAY_RELEASE_PREPARE_NEXT_RELEASE_BRANCH="true"
+	_PROMOTION_DIR="${PWD}"/test-dependencies/expected
+
+	_test_release_gold_prepare_next_release_branch "2024.q1.12" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
 }
 
 function test_release_gold_not_reference_new_releases {
 	_test_release_gold_not_reference_new_releases "7.3.10-u36" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
 	_test_release_gold_not_reference_new_releases "7.4.13-u101" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
 	_test_release_gold_not_reference_new_releases "7.4.3.125-ga125" "${LIFERAY_COMMON_EXIT_CODE_SKIPPED}"
+}
+
+function test_release_gold_prepare_next_release_branch {
+	LIFERAY_RELEASE_PREPARE_NEXT_RELEASE_BRANCH="true"
+
+	_test_release_gold_prepare_next_release_branch "2025.q2.0" "${LIFERAY_COMMON_EXIT_CODE_OK}"
 }
 
 function test_release_gold_reference_new_releases {
@@ -112,10 +127,10 @@ function test_release_gold_set_next_release_version_display_name {
 	_test_release_gold_set_next_release_version_display_name "2025.q1" "2 LTS" "2025.Q1.2 LTS"
 }
 
-function _test_release_gold_not_prepare_next_release_branch {
+function _test_release_gold_check_supported_versions {
 	_PRODUCT_VERSION="${1}"
 
-	prepare_next_release_branch 1> /dev/null
+	check_supported_versions &> /dev/null
 
 	assert_equals "${?}" "${2}"
 }
@@ -124,6 +139,14 @@ function _test_release_gold_not_reference_new_releases {
 	_PRODUCT_VERSION="${1}"
 
 	reference_new_releases 1> /dev/null
+
+	assert_equals "${?}" "${2}"
+}
+
+function _test_release_gold_prepare_next_release_branch {
+	_PRODUCT_VERSION="${1}"
+
+	prepare_next_release_branch 1> /dev/null
 
 	assert_equals "${?}" "${2}"
 }

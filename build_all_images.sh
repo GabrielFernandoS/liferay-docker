@@ -1,6 +1,7 @@
 #!/bin/bash
 
 source ./_common.sh
+source ./_env_common.sh
 source ./_liferay_common.sh
 source ./_release_common.sh
 
@@ -246,7 +247,7 @@ function build_caddy_image {
 }
 
 function build_dynamic_rendering_image {
-	if [[ $(get_latest_docker_hub_version "job-runner") == $(./release_notes.sh get-version) ]] && [[ "${LIFERAY_DOCKER_DEVELOPER_MODE}" != "true" ]]
+	if [[ $(get_latest_docker_hub_version "dynamic-rendering") == $(./release_notes.sh get-version) ]] && [[ "${LIFERAY_DOCKER_DEVELOPER_MODE}" != "true" ]]
 	then
 		echo ""
 		echo "Docker image Dynamic Rendering is up to date."
@@ -349,6 +350,31 @@ function build_job_runner_image {
 		exit 1
 	else
 		echo "SUCCESS: Job Runner" >> "${LIFERAY_DOCKER_LOGS_DIR}/results"
+	fi
+}
+
+function build_nexus_publisher_image {
+	if [[ $(get_latest_docker_hub_version "nexus-publisher") == $(./release_notes.sh get-version) ]] && [[ "${LIFERAY_DOCKER_DEVELOPER_MODE}" != "true" ]]
+	then
+		echo ""
+		echo "Docker image Nexus Publisher is up to date."
+
+		return
+	fi
+
+	echo ""
+	echo "Building Docker image Nexus Publisher."
+	echo ""
+
+	LIFERAY_DOCKER_IMAGE_PLATFORMS="${LIFERAY_DOCKER_IMAGE_PLATFORMS}" LIFERAY_DOCKER_REPOSITORY="${LIFERAY_DOCKER_REPOSITORY}" time ./build_nexus_publisher_image.sh "${BUILD_ALL_IMAGES_PUSH}" | tee --append "${LIFERAY_DOCKER_LOGS_DIR}"/nexus_publisher.log
+
+	if [ "${PIPESTATUS[0]}" -gt 0 ]
+	then
+		echo "FAILED: Nexus Publisher" >> "${LIFERAY_DOCKER_LOGS_DIR}/results"
+
+		exit 1
+	else
+		echo "SUCCESS: Nexus Publisher" >> "${LIFERAY_DOCKER_LOGS_DIR}/results"
 	fi
 }
 
@@ -484,7 +510,7 @@ function build_zabbix_web_image {
 }
 
 function get_latest_available_zulu_version {
-	local version=$(\
+	local version=$( \
 		curl \
 			--header 'accept: */*' \
 			--location \
@@ -632,7 +658,7 @@ function main {
 		BUILD_ALL_IMAGES_PUSH="push-all"
 
 		if [ "$(git config --global github.user)" == "brianchandotcom" ] ||
-		   ([ "$(git config --global user.name)" == "liferay-release" ] && [[ "$(hostname)" =~ ^release-slave-[1-4]$ ]])
+		   ([ "$(git config --global user.name)" == "liferay-release" ] && is_release_slave)
 		then
 			./release_notes.sh commit
 

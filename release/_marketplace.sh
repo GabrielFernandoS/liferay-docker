@@ -26,12 +26,11 @@ function check_liferay_marketplace_products_compatibility {
 		declare -A LIFERAY_MARKETPLACE_PRODUCTS=(
 			["adyen"]="f05ab2d6-1d54-c72d-988a-91fcd5669ef3"
 			["drools"]="15099181"
-			["liferaycommerceminium4globalcss"]="bee3adc0-891c-5828-c4f6-3d244135c972"
+			["liferaycommerceminium4globalcss"]="ebcf98b3-9844-b783-757a-579944b18b00"
 			["liferaypaypalbatch"]="a1946869-212f-0793-d703-b623d0f149a6"
 			["liferayupscommerceshippingengine"]="f1cb4b5e-fbdd-7f70-df5d-9f1a736784b2"
 			["opensearch"]="ea19fdc8-b908-690d-9f90-15edcdd23a87"
 			["punchout"]="175496027"
-			["solr"]="30536632"
 			["stripe"]="6a02a832-083b-f08c-888a-0a59d7c09119"
 		)
 	fi
@@ -113,7 +112,7 @@ function _check_liferay_marketplace_product_compatibility {
 
 		while IFS= read -r module_info
 		do
-			local module_name=$(\
+			local module_name=$( \
 				echo "${module_info}" | \
 				cut --delimiter "|" --fields=4 | \
 				sed "s/ (.*)//" | \
@@ -191,9 +190,9 @@ function _download_product {
 	local product_download_url=${1}
 	local product_file_name=${2}
 
-	local http_code=$(\
+	local http_code=$( \
 		curl \
-			"https://marketplace-uat.liferay.com/${product_download_url}" \
+			"https://marketplace.liferay.com/${product_download_url}" \
 			--header "Authorization: Bearer ${_LIFERAY_MARKETPLACE_OAUTH2_TOKEN}" \
 			--location \
 			--output "${_BUILD_DIR}/marketplace/${product_file_name}" \
@@ -244,7 +243,7 @@ function _download_product_by_external_reference_code {
 function _get_latest_product_virtual_settings_file_entry_json_index {
 	local product_virtual_settings_file_entries=${1}
 
-	local latest_product_virtual_settings_file_entry_json_index=$(\
+	local latest_product_virtual_settings_file_entry_json_index=$( \
 		echo "${product_virtual_settings_file_entries}" | \
 		jq ".items
 			| to_entries
@@ -275,9 +274,9 @@ function _get_product_by_external_reference_code {
 
 	local http_code_file=$(mktemp)
 
-	local product=$(\
+	local product=$( \
 		curl \
-			"https://marketplace-uat.liferay.com/o/headless-commerce-admin-catalog/v1.0/products/by-externalReferenceCode/${product_external_reference_code}?nestedFields=productVirtualSettings%2Cattachments" \
+			"https://marketplace.liferay.com/o/headless-commerce-admin-catalog/v1.0/products/by-externalReferenceCode/${product_external_reference_code}?nestedFields=productVirtualSettings%2Cattachments" \
 			--header "Authorization: Bearer ${_LIFERAY_MARKETPLACE_OAUTH2_TOKEN}" \
 			--request GET \
 			--silent \
@@ -313,9 +312,9 @@ function _get_product_virtual_settings_file_entries_by_external_reference_code {
 
 	local http_code_file=$(mktemp)
 
-	local product_virtual_settings_file_entries=$(\
+	local product_virtual_settings_file_entries=$( \
 		curl \
-			"https://marketplace-uat.liferay.com/o/headless-commerce-admin-catalog/v1.0/product-virtual-settings/${product_virtual_settings_id}/product-virtual-settings-file-entries?pageSize=20" \
+			"https://marketplace.liferay.com/o/headless-commerce-admin-catalog/v1.0/product-virtual-settings/${product_virtual_settings_id}/product-virtual-settings-file-entries?pageSize=20" \
 			--header "Authorization: Bearer ${_LIFERAY_MARKETPLACE_OAUTH2_TOKEN}" \
 			--request GET \
 			--silent \
@@ -340,9 +339,9 @@ function _get_product_virtual_settings_file_entries_by_external_reference_code {
 function _set_liferay_marketplace_oauth2_token {
 	local http_code_file=$(mktemp)
 
-	local liferay_marketplace_oauth2_token_response=$(\
+	local liferay_marketplace_oauth2_token_response=$( \
 		curl \
-			"https://marketplace-uat.liferay.com/o/oauth2/token" \
+			"https://marketplace.liferay.com/o/oauth2/token" \
 			--data "client_id=${LIFERAY_MARKETPLACE_OAUTH2_CLIENT_ID}&client_secret=${LIFERAY_MARKETPLACE_OAUTH2_CLIENT_SECRET}&grant_type=client_credentials" \
 			--request POST \
 			--silent \
@@ -380,9 +379,9 @@ function _update_product_supported_versions {
 	then
 		local latest_product_virtual_file_entry_id=$(echo "${product_virtual_settings_file_entries}" | jq --raw-output ".items[${latest_product_virtual_settings_file_entry_json_index}].id")
 
-		local http_code=$(\
+		local http_code=$( \
 			curl \
-				"https://marketplace-uat.liferay.com/o/headless-commerce-admin-catalog/v1.0/product-virtual-settings-file-entries/${latest_product_virtual_file_entry_id}" \
+				"https://marketplace.liferay.com/o/headless-commerce-admin-catalog/v1.0/product-virtual-settings-file-entries/${latest_product_virtual_file_entry_id}" \
 				--form "productVirtualSettingsFileEntry={\"version\": \"${latest_product_virtual_file_entry_version}, ${product_virtual_file_entry_target_version}\"};type=application/json" \
 				--header "Authorization: Bearer ${_LIFERAY_MARKETPLACE_OAUTH2_TOKEN}" \
 				--output /dev/null \
